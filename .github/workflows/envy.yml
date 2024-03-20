@@ -1,0 +1,21 @@
+name: "envy"
+on:
+  workflow_call:
+jobs:
+  envy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["8.2"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: Install Composer Dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+      - name: Run Envy sync
+        run: php artisan envy:sync --dry
+      - name: Run Envy prune
+        run: php artisan envy:prune --dry

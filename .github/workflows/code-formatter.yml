@@ -1,0 +1,52 @@
+name: "code-formatter"
+on:
+  workflow_call:
+    inputs:
+      skip-npm:
+        description: 'Whether to skip installing NPM dependencies'
+        default: false
+        type: boolean
+jobs:
+  code-formatter:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["8.2"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+      - name: Install Composer Dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        env:
+          APP_ENV: testing
+      - name: Install NPM dependencies
+        if: ${{ inputs.skip-npm == false }}
+        run: npm ci
+      - name: Run Prettier - format js files
+        if: ${{ inputs.skip-npm == false }}
+        run: npm run format-js
+      - name: Run Prettier - format blade files
+        if: ${{ inputs.skip-npm == false }}
+        run: npm run format-blade
+      - name: Run tlint
+        run: vendor/bin/tlint format
+      - name: Rector Cache
+        uses: actions/cache@v4
+        with:
+          path: /.rector
+          key: ${{ runner.os }}-rector-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-rector-
+      - run: mkdir -p .rector
+      - name: Rector Run
+        run: php vendor/bin/rector process --config=rector.php
+      - name: Run laravel pint
+        run: vendor/bin/pint
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: code auto-format
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

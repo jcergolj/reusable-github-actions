@@ -1,0 +1,31 @@
+name: phpinsights
+on:
+  workflow_call:
+
+jobs:
+  phpinsights:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["8.2"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Install Composer Dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        env:
+          APP_ENV: testing
+
+      - name: Cache composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Run insights
+        run: php artisan insights --no-interaction --no-interaction --fix -v

@@ -1,0 +1,24 @@
+name: "larastan"
+on:
+  workflow_call:
+jobs:
+  larastan:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["8.2", "8.3"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Run composer install
+        run: composer install -n --prefer-dist
+        env:
+          APP_ENV: testing
+
+      - name: Run Larastan
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G

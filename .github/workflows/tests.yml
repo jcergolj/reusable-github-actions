@@ -1,0 +1,45 @@
+name: "tests"
+
+on:
+  workflow_call:
+    inputs:
+      install-tailwind-css:
+        description: 'Whether to install tailwindcss manifest'
+        default: false
+        type: boolean
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ["8.2", "8.3"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+
+      - name: Install Composer Dependencies
+        run: composer install --no-progress --prefer-dist --optimize-autoloader
+        env:
+          APP_ENV: testing
+
+      - name: Prepare Laravel Application
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Install Tailwind CSS manifest
+        if: ${{ inputs.install-tailwind-css == true }}
+        run: |
+          php artisan tailwindcss:download
+          php artisan tailwindcss:build
+
+      - name: Run tests
+        run: php artisan test
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
