@@ -31,8 +31,6 @@ jobs:
       - name: Run Prettier - format blade files
         if: ${{ inputs.skip-npm == false }}
         run: npm run format-blade
-      - name: Run tlint
-        run: vendor/bin/tlint format
       - name: Rector Cache
         uses: actions/cache@v4
         with:
