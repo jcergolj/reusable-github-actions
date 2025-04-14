@@ -1,0 +1,34 @@
+name: Install NPM Dependencies and Format Files
+description: Installs NPM dependencies and runs Prettier for JS and Blade files
+inputs:
+  skip-npm:
+    description: 'Skip NPM setup steps'
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache NPM dependencies
+      if: ${{ inputs.skip-npm == 'false' }}
+      uses: actions/cache@v4
+      with:
+        path: npm
+        key: npm-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          npm-cache-${{ runner.os }}-
+
+    - name: Install NPM dependencies
+      if: ${{ inputs.skip-npm == 'false' }}
+      run: npm ci
+      shell: bash
+
+    - name: Run Prettier - format js files
+      if: ${{ inputs.skip-npm == 'false' }}
+      run: npm run format-js
+      shell: bash
+
+    - name: Run Prettier - format blade files
+      if: ${{ inputs.skip-npm == 'false' }}
+      run: npm run format-blade
+      shell: bash

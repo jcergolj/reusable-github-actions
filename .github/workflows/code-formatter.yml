@@ -6,6 +6,7 @@ on:
         description: 'Whether to skip installing NPM dependencies'
         default: false
         type: boolean
+
 jobs:
   code-formatter:
     runs-on: ubuntu-latest
@@ -13,35 +14,33 @@ jobs:
       matrix:
         php: ["8.3"]
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: PHP Setup
+        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
         with:
           php-version: ${{ matrix.php }}
-      - name: Install Composer Dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
-        env:
-          APP_ENV: testing
-      - name: Install NPM dependencies
-        if: ${{ inputs.skip-npm == false }}
-        run: npm ci
+
+      - name: Composer
+        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
+
+      - name: NPM
+        uses: jcergolj/reusable-github-actions/.github/actions/npm-setup@master
+        with:
+          skip-npm: ${{ inputs.skip-npm }}
+
       - name: Run Prettier - format js files
         if: ${{ inputs.skip-npm == false }}
         run: npm run format-js
+
       - name: Run Prettier - format blade files
         if: ${{ inputs.skip-npm == false }}
         run: npm run format-blade
-      - name: Rector Cache
-        uses: actions/cache@v4
-        with:
-          path: /.rector
-          key: ${{ runner.os }}-rector-${{ github.run_id }}
-          restore-keys: ${{ runner.os }}-rector-
-      - run: mkdir -p .rector
-      - name: Rector Run
-        run: php vendor/bin/rector process --config=rector.php
-      - name: Run laravel pint
+
+      - name: Run Rector
+        uses: jcergolj/reusable-github-actions/.github/actions/rector@master
+
+      - name: Run Laravel Pint
         run: vendor/bin/pint
+
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:

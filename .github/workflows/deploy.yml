@@ -1,19 +1,6 @@
 name: "deploy"
 on:
   workflow_call:
-    inputs:
-      host:
-        description: 'host'
-        type: string
-      username:
-        description: 'username'
-        type: string
-      port:
-        description: 'port'
-        type: string
-      sshkey:
-        description: 'sshkey'
-        type: string
 
 jobs:
   deploy:
@@ -23,23 +10,23 @@ jobs:
       - name: Deploy to server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ inputs.host }}
-          username: ${{ inputs.username }}
-          port: ${{ inputs.port }}
-          key: ${{ inputs.sshkey }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          port: ${{ secrets.PORT }}
+          key: ${{ secrets.SSHKEY }}
           script: |
             cd /home/jcergolj/staging.issuefy.dev
-            git fetch
-            git reset --hard origin/master
-            git pull
+          git fetch
+          git reset --hard origin/master
+          git pull
 
-            composer install --no-interaction --prefer-dist --optimize-autoloader
+          composer install --no-interaction --prefer-dist --optimize-autoloader
 
-            ( flock -w 10 9 || exit 1
-                echo 'Restarting FPM...'; sudo -S service php8.3-fpm reload ) 9>/tmp/fpmlock
+          ( flock -w 10 9 || exit 1
+              echo 'Restarting FPM...'; sudo -S service php8.3-fpm reload ) 9>/tmp/fpmlock
 
-            if [ -f artisan ]; then
-                php artisan migrate --force
-            fi
+          if [ -f artisan ]; then
+              php artisan migrate --force
+          fi
 
-            php artisan optimize
+          php artisan optimize

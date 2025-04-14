@@ -1,0 +1,19 @@
+name: Install Composer Dependencies
+description: Caches and installs Composer dependencies
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: vendor
+        key: composer-cache-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+        restore-keys: |
+          composer-cache-${{ runner.os }}-
+
+    - name: Install Composer dependencies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+      shell: bash
+      env:
+        APP_ENV: testing

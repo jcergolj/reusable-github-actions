@@ -15,10 +15,16 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
 
-      - name: Run composer install
-        run: composer install -n --prefer-dist
-        env:
-          APP_ENV: testing
+      - name: Composer
+        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
+
+      - name: Cache Larastan
+        uses: actions/cache@v4
+        with:
+          path: .phpstan.cache
+          key: phpstan-cache-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            phpstan-cache-${{ runner.os }}-
 
       - name: Run Larastan
         run: ./vendor/bin/phpstan analyse --memory-limit=2G

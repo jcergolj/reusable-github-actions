@@ -1,0 +1,14 @@
+name: PHP Setup
+description: Setup PHP with version input
+inputs:
+  php-version:
+    required: true
+    type: string
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ inputs.php-version }}

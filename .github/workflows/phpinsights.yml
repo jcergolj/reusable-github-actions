@@ -9,23 +9,13 @@ jobs:
       matrix:
         php: ["8.3"]
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: PHP Setup
+        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
         with:
           php-version: ${{ matrix.php }}
 
-      - name: Install Composer Dependencies
-        run: composer install --no-progress --prefer-dist --optimize-autoloader
-        env:
-          APP_ENV: testing
-
-      - name: Cache composer dependencies
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
+      - name: Composer
+        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
 
       - name: Run insights
         run: php artisan insights --no-interaction --no-interaction --fix -v
