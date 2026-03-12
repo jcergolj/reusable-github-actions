@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install TruffleHog via curl
         run: |
@@ -15,6 +15,6 @@ jobs:
 
       - name: Run TruffleHog to Scan Last Commit
         run: |
-          trufflehog git https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git --branch ${{ github.ref_name }} --fail
+          trufflehog git https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git --branch ${{ github.ref_name }} --fail
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

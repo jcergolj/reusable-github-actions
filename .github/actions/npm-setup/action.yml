@@ -11,7 +11,7 @@ runs:
   steps:
     - name: Cache NPM dependencies
       if: ${{ inputs.skip-npm == 'false' }}
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         path: npm
         key: npm-cache-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
