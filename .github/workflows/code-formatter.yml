@@ -46,4 +46,4 @@ jobs:
         with:
           commit_message: code auto-format
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}

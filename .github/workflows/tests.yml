@@ -34,7 +34,7 @@ jobs:
           php artisan tailwindcss:build
 
       - name: Run tests
-        run: php artisan test --parallel
+        run: php artisan test --parallel --no-progress
         env:
           APP_ENV: testing
           DB_CONNECTION: sqlite
