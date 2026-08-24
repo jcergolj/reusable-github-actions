@@ -6,6 +6,10 @@ on:
         description: 'Whether to skip installing NPM dependencies'
         default: false
         type: boolean
+      pint-blade:
+        description: 'Whether to run Laravel Pint with Blade formatting enabled'
+        default: false
+        type: boolean
 
 jobs:
   code-formatter:
@@ -27,6 +31,10 @@ jobs:
         with:
           skip-npm: ${{ inputs.skip-npm }}
 
+      - name: Install Laravel Pint Blade dependencies
+        if: ${{ inputs.pint-blade == true }}
+        run: npm install --no-save --no-package-lock prettier prettier-plugin-blade prettier-plugin-tailwindcss
+
       - name: Run Prettier - format js files
         if: ${{ inputs.skip-npm == false }}
         run: npm run format-js
@@ -38,7 +46,12 @@ jobs:
       - name: Run Rector
         uses: jcergolj/reusable-github-actions/.github/actions/rector@master
 
+      - name: Run Laravel Pint with Blade
+        if: ${{ inputs.pint-blade == true }}
+        run: vendor/bin/pint --blade
+
       - name: Run Laravel Pint
+        if: ${{ inputs.pint-blade == false }}
         run: vendor/bin/pint
 
       - name: Commit changes
