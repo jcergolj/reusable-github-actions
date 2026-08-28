@@ -8,8 +8,8 @@ Call workflows from an application workflow with `uses: jcergolj/reusable-github
 
 | Workflow | Purpose | Inputs / secrets |
 | --- | --- | --- |
-| `tests.yml` | Runs Laravel tests on PHP 8.4 and 8.5 | `install-tailwind-css` input |
-| `larastan.yml` | Runs `vendor/bin/phpstan analyse --memory-limit=2G` on PHP 8.4 | None |
+| `tests.yml` | Runs Laravel tests on PHP 8.5 | `install-tailwind-css` input |
+| `larastan.yml` | Runs `vendor/bin/phpstan analyse --memory-limit=2G` on PHP 8.5 | None |
 | `code-formatter.yml` | Runs Prettier, Rector, and Laravel Pint | `skip-npm`, `pint-blade` inputs; `PAT_TOKEN` secret for commits |
 | `envy.yml` | Runs Envy sync and prune checks | None |
 | `gitleaks.yml` | Scans the full Git history for secrets | `PAT_TOKEN` secret |

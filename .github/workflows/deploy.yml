@@ -1,5 +1,8 @@
 name: "deploy"
 on:
+  push:
+    branches:
+      - master
   workflow_call:
     secrets:
       DEPLOY_SSH_PRIVATE_KEY:
@@ -10,7 +13,38 @@ on:
         required: true
 
 jobs:
+  tests:
+    uses: jcergolj/reusable-github-actions/.github/workflows/tests.yml@master
+    secrets: inherit
+
+  phpstan:
+    uses: jcergolj/reusable-github-actions/.github/workflows/larastan.yml@master
+    secrets: inherit
+
+  code-formatter:
+    uses: jcergolj/reusable-github-actions/.github/workflows/code-formatter.yml@master
+    secrets: inherit
+
+  envy:
+    uses: jcergolj/reusable-github-actions/.github/workflows/envy.yml@master
+    secrets: inherit
+
+  gitleaks:
+    uses: jcergolj/reusable-github-actions/.github/workflows/gitleaks.yml@master
+    secrets: inherit
+
+  trufflehog:
+    uses: jcergolj/reusable-github-actions/.github/workflows/trufflehog-scan.yml@master
+    secrets: inherit
+
   deploy:
+    needs:
+      - tests
+      - phpstan
+      - code-formatter
+      - envy
+      - gitleaks
+      - trufflehog
     runs-on: ubuntu-latest
     environment: production
 
