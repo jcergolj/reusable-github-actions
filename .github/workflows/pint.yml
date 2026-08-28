@@ -1,0 +1,19 @@
+name: "pint"
+
+on:
+  workflow_call:
+
+jobs:
+  pint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PHP Setup
+        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
+        with:
+          php-version: "8.5"
+
+      - name: Composer
+        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
+
+      - name: Check Laravel Pint
+        run: vendor/bin/pint --test

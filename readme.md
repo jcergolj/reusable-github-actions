@@ -10,11 +10,14 @@ Call workflows from an application workflow with `uses: jcergolj/reusable-github
 | --- | --- | --- |
 | `tests.yml` | Runs Laravel tests on PHP 8.5 | `install-tailwind-css` input |
 | `larastan.yml` | Runs `vendor/bin/phpstan analyse --memory-limit=2G` on PHP 8.5 | None |
+| `pint.yml` | Checks Laravel Pint formatting | None |
+| `rector.yml` | Checks Rector changes without modifying files | None |
 | `code-formatter.yml` | Runs Prettier, Rector, and Laravel Pint | `skip-npm`, `pint-blade` inputs; `PAT_TOKEN` secret for commits |
 | `envy.yml` | Runs Envy sync and prune checks | None |
 | `gitleaks.yml` | Scans the full Git history for secrets | `PAT_TOKEN` secret |
 | `trufflehog-scan.yml` | Scans the repository for secrets | `PAT_TOKEN` secret |
-| `deploy.yml` | Checks Pint, Rector, Envy, Gitleaks, and TruffleHog, then deploys with Deployer on PHP 8.5 | `DEPLOY_SSH_PRIVATE_KEY`, `PAT_TOKEN` secrets |
+| `deploy.yml` | Runs all checks as separate jobs, then deploys with Deployer on PHP 8.5 | `DEPLOY_SSH_PRIVATE_KEY`, `PAT_TOKEN` secrets |
+| `deploy-only.yml` | Deploys with Deployer without running checks | `DEPLOY_SSH_PRIVATE_KEY` secret |
 
 ## Composite actions
 
@@ -106,16 +109,31 @@ jobs:
   larastan:
     uses: jcergolj/reusable-github-actions/.github/workflows/larastan.yml@master
 
+  pint:
+    uses: jcergolj/reusable-github-actions/.github/workflows/pint.yml@master
+
+  rector:
+    uses: jcergolj/reusable-github-actions/.github/workflows/rector.yml@master
+
+  envy:
+    uses: jcergolj/reusable-github-actions/.github/workflows/envy.yml@master
+
+  gitleaks:
+    uses: jcergolj/reusable-github-actions/.github/workflows/gitleaks.yml@master
+    secrets: inherit
+
+  trufflehog:
+    uses: jcergolj/reusable-github-actions/.github/workflows/trufflehog-scan.yml@master
+    secrets: inherit
+
   deploy:
-    needs: [tests, larastan]
+    needs: [tests, larastan, pint, rector, envy, gitleaks, trufflehog]
     if: github.ref == 'refs/heads/master'
-    uses: jcergolj/reusable-github-actions/.github/workflows/deploy.yml@master
-    secrets:
-      DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+    uses: jcergolj/reusable-github-actions/.github/workflows/deploy-only.yml@master
+    secrets: inherit
 ```
 
-The deploy job verifies code quality and secrets without modifying files, loads the SSH key, and runs Deployer. The application must contain a working `deploy.php` and the server must be able to clone the repository using its configured GitHub deploy key.
+Use `deploy.yml` instead when you want the repository to provide all checks and the deployment gate automatically. The application must contain a working `deploy.php` and the server must be able to clone the repository using its configured GitHub deploy key.
 
 ## Security notes
 

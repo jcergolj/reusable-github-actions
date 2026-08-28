@@ -22,32 +22,10 @@ jobs:
     secrets: inherit
 
   pint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: PHP Setup
-        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
-        with:
-          php-version: "8.5"
-
-      - name: Composer
-        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
-
-      - name: Check Laravel Pint
-        run: vendor/bin/pint --test
+    uses: jcergolj/reusable-github-actions/.github/workflows/pint.yml@master
 
   rector:
-    runs-on: ubuntu-latest
-    steps:
-      - name: PHP Setup
-        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
-        with:
-          php-version: "8.5"
-
-      - name: Composer
-        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
-
-      - name: Check Rector
-        run: vendor/bin/rector process --dry-run --config=rector.php
+    uses: jcergolj/reusable-github-actions/.github/workflows/rector.yml@master
 
   envy:
     uses: jcergolj/reusable-github-actions/.github/workflows/envy.yml@master
@@ -70,27 +48,5 @@ jobs:
       - envy
       - gitleaks
       - trufflehog
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: "8.5"
-          coverage: none
-
-      - name: Install Composer dependencies
-        run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Configure SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
-
-      - name: Deploy with Deployer
-        run: vendor/bin/dep deploy production
+    uses: jcergolj/reusable-github-actions/.github/workflows/deploy-only.yml@master
+    secrets: inherit
