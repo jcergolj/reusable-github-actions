@@ -5,6 +5,9 @@ on:
       DEPLOY_SSH_PRIVATE_KEY:
         description: "Private SSH key for the production deployer user"
         required: true
+      PAT_TOKEN:
+        description: "GitHub token used by secret scanning workflows"
+        required: true
 
 jobs:
   deploy:
@@ -13,6 +16,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -28,6 +33,23 @@ jobs:
 
       - name: Check Rector
         run: vendor/bin/rector process --dry-run --config=rector.php
+
+      - name: Run Envy sync check
+        run: php artisan envy:sync --dry
+
+      - name: Run Envy prune check
+        run: php artisan envy:prune --dry
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+
+      - name: Install TruffleHog
+        run: curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Run TruffleHog
+        run: trufflehog git https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git --branch ${{ github.ref_name }} --fail
 
       - name: Configure SSH
         uses: webfactory/ssh-agent@v0.9.0
