@@ -51,12 +51,13 @@ jobs:
 
 ## Deployer setup
 
-The deploy workflow runs these checks before deployment:
+The deploy workflow runs these checks as separate required jobs before deployment:
 
-- `vendor/bin/pint --test`
-- `vendor/bin/rector process --dry-run --config=rector.php`
-- `php artisan envy:sync --dry`
-- `php artisan envy:prune --dry`
+- Tests
+- PHPStan/Larastan
+- Pint: `vendor/bin/pint --test`
+- Rector: `vendor/bin/rector process --dry-run --config=rector.php`
+- Envy sync and prune checks
 - Gitleaks full-history scan
 - TruffleHog repository scan
 

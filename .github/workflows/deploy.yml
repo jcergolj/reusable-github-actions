@@ -21,9 +21,33 @@ jobs:
     uses: jcergolj/reusable-github-actions/.github/workflows/larastan.yml@master
     secrets: inherit
 
-  code-formatter:
-    uses: jcergolj/reusable-github-actions/.github/workflows/code-formatter.yml@master
-    secrets: inherit
+  pint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PHP Setup
+        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
+        with:
+          php-version: "8.5"
+
+      - name: Composer
+        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
+
+      - name: Check Laravel Pint
+        run: vendor/bin/pint --test
+
+  rector:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PHP Setup
+        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
+        with:
+          php-version: "8.5"
+
+      - name: Composer
+        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
+
+      - name: Check Rector
+        run: vendor/bin/rector process --dry-run --config=rector.php
 
   envy:
     uses: jcergolj/reusable-github-actions/.github/workflows/envy.yml@master
@@ -41,7 +65,8 @@ jobs:
     needs:
       - tests
       - phpstan
-      - code-formatter
+      - pint
+      - rector
       - envy
       - gitleaks
       - trufflehog
@@ -61,29 +86,6 @@ jobs:
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Check Laravel Pint
-        run: vendor/bin/pint --test
-
-      - name: Check Rector
-        run: vendor/bin/rector process --dry-run --config=rector.php
-
-      - name: Run Envy sync check
-        run: php artisan envy:sync --dry
-
-      - name: Run Envy prune check
-        run: php artisan envy:prune --dry
-
-      - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-
-      - name: Install TruffleHog
-        run: curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh -s -- -b /usr/local/bin
-
-      - name: Run TruffleHog
-        run: trufflehog git https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }}.git --branch ${{ github.ref_name }} --fail
 
       - name: Configure SSH
         uses: webfactory/ssh-agent@v0.9.0
