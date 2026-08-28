@@ -14,7 +14,7 @@ Call workflows from an application workflow with `uses: jcergolj/reusable-github
 | `envy.yml` | Runs Envy sync and prune checks | None |
 | `gitleaks.yml` | Scans the full Git history for secrets | `PAT_TOKEN` secret |
 | `trufflehog-scan.yml` | Scans the repository for secrets | `PAT_TOKEN` secret |
-| `deploy.yml` | Deploys with Deployer on PHP 8.5 | `DEPLOY_SSH_PRIVATE_KEY` secret |
+| `deploy.yml` | Checks Pint and Rector, then deploys with Deployer on PHP 8.5 | `DEPLOY_SSH_PRIVATE_KEY` secret |
 
 ## Composite actions
 
@@ -51,7 +51,7 @@ jobs:
 
 ## Deployer setup
 
-The deploy workflow runs `vendor/bin/dep deploy production` from the GitHub Actions runner. It must be called after the quality jobs pass.
+The deploy workflow first runs `vendor/bin/pint --test` and `vendor/bin/rector process --dry-run --config=rector.php`. If either check fails, deployment stops. It then runs `vendor/bin/dep deploy production` from the GitHub Actions runner.
 
 ### 1. Prepare the application
 
@@ -63,6 +63,12 @@ php artisan metator:install
 ```
 
 Review `deploy.php`, set the production hostname, repository, deploy user, and deploy path. Bootstrap the server using the generated `scripts/server-bootstrap.sh` before using GitHub Actions.
+
+The application must also have Laravel Pint and Rector installed, with a `rector.php` configuration file:
+
+```bash
+composer require --dev laravel/pint rector/rector
+```
 
 ### 2. Add the deployment key
 
@@ -94,7 +100,7 @@ jobs:
       DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
 ```
 
-The deploy job uses PHP 8.5, installs Composer dependencies, loads the SSH key, and runs Deployer. The application must contain a working `deploy.php` and the server must be able to clone the repository using its configured GitHub deploy key.
+The deploy job uses PHP 8.5, installs Composer dependencies, verifies Pint and Rector without modifying files, loads the SSH key, and runs Deployer. The application must contain a working `deploy.php` and the server must be able to clone the repository using its configured GitHub deploy key.
 
 ## Security notes
 
