@@ -14,7 +14,7 @@ Call workflows from an application workflow with `uses: jcergolj/reusable-github
 | `envy.yml` | Runs Envy sync and prune checks | None |
 | `gitleaks.yml` | Scans the full Git history for secrets | `PAT_TOKEN` secret |
 | `trufflehog-scan.yml` | Scans the repository for secrets | `PAT_TOKEN` secret |
-| `deploy.yml` | Checks Pint and Rector, then deploys with Deployer on PHP 8.5 | `DEPLOY_SSH_PRIVATE_KEY` secret |
+| `deploy.yml` | Checks Pint, Rector, Envy, Gitleaks, and TruffleHog, then deploys with Deployer on PHP 8.5 | `DEPLOY_SSH_PRIVATE_KEY`, `PAT_TOKEN` secrets |
 
 ## Composite actions
 
@@ -51,7 +51,16 @@ jobs:
 
 ## Deployer setup
 
-The deploy workflow first runs `vendor/bin/pint --test` and `vendor/bin/rector process --dry-run --config=rector.php`. If either check fails, deployment stops. It then runs `vendor/bin/dep deploy production` from the GitHub Actions runner.
+The deploy workflow runs these checks before deployment:
+
+- `vendor/bin/pint --test`
+- `vendor/bin/rector process --dry-run --config=rector.php`
+- `php artisan envy:sync --dry`
+- `php artisan envy:prune --dry`
+- Gitleaks full-history scan
+- TruffleHog repository scan
+
+If any check fails, the deployment stops. The workflow then runs `vendor/bin/dep deploy production` on PHP 8.5.
 
 ### 1. Prepare the application
 
@@ -64,7 +73,7 @@ php artisan metator:install
 
 Review `deploy.php`, set the production hostname, repository, deploy user, and deploy path. Bootstrap the server using the generated `scripts/server-bootstrap.sh` before using GitHub Actions.
 
-The application must also have Laravel Pint and Rector installed, with a `rector.php` configuration file:
+The application must also have Laravel Pint, Rector, and Envy installed, with a `rector.php` configuration file:
 
 ```bash
 composer require --dev laravel/pint rector/rector
@@ -78,11 +87,15 @@ Create or use an SSH key whose public key is authorized for the production `depl
 
 Use the name `DEPLOY_SSH_PRIVATE_KEY`. Do not commit the private key.
 
-### 3. Add the production environment
+### 3. Add the scanning token
+
+Add a GitHub personal access token as the `PAT_TOKEN` repository secret. It is used by Gitleaks and TruffleHog to access repository history. Grant only the repository permissions required by the application.
+
+### 4. Add the production environment
 
 Create a `production` environment under `Settings -> Environments`. Add required reviewers if deployments need manual approval.
 
-### 4. Call the deploy workflow
+### 5. Call the deploy workflow
 
 ```yaml
 jobs:
@@ -98,9 +111,10 @@ jobs:
     uses: jcergolj/reusable-github-actions/.github/workflows/deploy.yml@master
     secrets:
       DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
 ```
 
-The deploy job uses PHP 8.5, installs Composer dependencies, verifies Pint and Rector without modifying files, loads the SSH key, and runs Deployer. The application must contain a working `deploy.php` and the server must be able to clone the repository using its configured GitHub deploy key.
+The deploy job verifies code quality and secrets without modifying files, loads the SSH key, and runs Deployer. The application must contain a working `deploy.php` and the server must be able to clone the repository using its configured GitHub deploy key.
 
 ## Security notes
 
