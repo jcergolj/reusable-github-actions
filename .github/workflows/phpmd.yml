@@ -1,0 +1,24 @@
+name: "phpmd"
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        description: 'run phpmd'
+        default: '8.5'
+        type: string
+
+jobs:
+  phpmd:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PHP Setup
+        uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master
+        with:
+          php-version: ${{ inputs.php-version }}
+
+      - name: Composer
+        uses: jcergolj/reusable-github-actions/.github/actions/composer-setup@master
+
+      - name: Run PHPMD
+        run: composer phpmd

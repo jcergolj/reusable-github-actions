@@ -13,6 +13,7 @@ Call workflows from an application workflow with `uses: jcergolj/reusable-github
 | `pint.yml` | Checks Laravel Pint formatting | None |
 | `rector.yml` | Checks Rector changes without modifying files | None |
 | `code-formatter.yml` | Runs Prettier, Rector, and Laravel Pint | `skip-npm`, `pint-blade` inputs; `PAT_TOKEN` secret for commits |
+| `phpmd.yml` | Runs `composer phpmd` on one PHP version | `php-version` input |
 | `envy.yml` | Runs Envy sync and prune checks | None |
 | `gitleaks.yml` | Scans the full Git history for secrets | `PAT_TOKEN` secret |
 | `trufflehog-scan.yml` | Scans the repository for secrets | `PAT_TOKEN` secret |
@@ -50,6 +51,65 @@ jobs:
   formatter:
     uses: jcergolj/reusable-github-actions/.github/workflows/code-formatter.yml@master
     secrets: inherit
+
+  phpmd:
+    uses: jcergolj/reusable-github-actions/.github/workflows/phpmd.yml@master
+```
+
+## PHPMD setup
+
+The `phpmd.yml` workflow expects the application repository to define its own `composer phpmd` command and local PHPMD ruleset.
+
+Example `composer.json` script:
+
+```json
+{
+  "scripts": {
+    "phpmd": "./vendor/bin/phpmd analyze app --format text --ruleset phpmd.xml"
+  }
+}
+```
+
+Minimal `phpmd.xml` starter:
+
+```xml
+<?xml version="1.0"?>
+<ruleset name="Minimal PHPMD">
+    <description>Complexity and size guardrails for app code.</description>
+
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/bootstrap/cache/*</exclude-pattern>
+
+    <rule ref="rulesets/codesize.xml/CyclomaticComplexity">
+        <properties>
+            <property name="reportLevel" value="10" />
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/NPathComplexity">
+        <properties>
+            <property name="minimum" value="200" />
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/ExcessiveMethodLength">
+        <properties>
+            <property name="minimum" value="75" />
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/ExcessiveClassLength">
+        <properties>
+            <property name="minimum" value="500" />
+        </properties>
+    </rule>
+
+    <rule ref="rulesets/codesize.xml/ExcessiveParameterList">
+        <properties>
+            <property name="minimum" value="6" />
+        </properties>
+    </rule>
+</ruleset>
 ```
 
 ## Deployer setup
