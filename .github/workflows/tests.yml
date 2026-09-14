@@ -7,12 +7,16 @@ on:
         description: 'Whether to install tailwindcss manifest'
         default: false
         type: boolean
+      php-versions:
+        description: 'JSON array of PHP versions to test'
+        default: '["8.5"]'
+        type: string
 jobs:
   tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: ["8.5"]
+        php: ${{ fromJSON(inputs.php-versions) }}
     steps:
       - name: PHP Setup
         uses: jcergolj/reusable-github-actions/.github/actions/php-setup@master

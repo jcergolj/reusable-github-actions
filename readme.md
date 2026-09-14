@@ -8,7 +8,7 @@ Call workflows from an application workflow with `uses: jcergolj/reusable-github
 
 | Workflow | Purpose | Inputs / secrets |
 | --- | --- | --- |
-| `tests.yml` | Runs Laravel tests on PHP 8.5 | `install-tailwind-css` input |
+| `tests.yml` | Runs Laravel tests on PHP 8.5 by default | `install-tailwind-css`, `php-versions` inputs |
 | `larastan.yml` | Runs `vendor/bin/phpstan analyse --memory-limit=2G` on PHP 8.5 | None |
 | `pint.yml` | Checks Laravel Pint formatting | None |
 | `rector.yml` | Checks Rector changes without modifying files | None |
@@ -44,6 +44,8 @@ on:
 jobs:
   tests:
     uses: jcergolj/reusable-github-actions/.github/workflows/tests.yml@master
+    with:
+      php-versions: '["8.4", "8.5"]'
 
   larastan:
     uses: jcergolj/reusable-github-actions/.github/workflows/larastan.yml@master
