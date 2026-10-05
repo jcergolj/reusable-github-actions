@@ -17,8 +17,6 @@ Call workflows from an application workflow with `uses: jcergolj/reusable-github
 | `envy.yml` | Runs Envy sync and prune checks | None |
 | `gitleaks.yml` | Scans the full Git history for secrets | `PAT_TOKEN` secret |
 | `trufflehog-scan.yml` | Scans the repository for secrets | `PAT_TOKEN` secret |
-| `deploy.yml` | Runs all checks as separate jobs, then deploys with Deployer on PHP 8.5 | `DEPLOY_SSH_PRIVATE_KEY`, `PAT_TOKEN` secrets |
-| `deploy-only.yml` | Deploys with Deployer without running checks | `DEPLOY_SSH_PRIVATE_KEY` secret |
 
 ## Composite actions
 
@@ -114,91 +112,7 @@ Minimal `phpmd.xml` starter:
 </ruleset>
 ```
 
-## Deployer setup
-
-The deploy workflow runs these checks as separate required jobs before deployment:
-
-- Tests
-- PHPStan/Larastan
-- Pint: `vendor/bin/pint --test`
-- Rector: `vendor/bin/rector process --dry-run --config=rector.php`
-- Envy sync and prune checks
-- Gitleaks full-history scan
-- TruffleHog repository scan
-
-If any check fails, the deployment stops. The workflow then runs `vendor/bin/dep deploy production` on PHP 8.5.
-
-### 1. Prepare the application
-
-Install and configure Deployer in the Laravel application:
-
-```bash
-composer require --dev jcergolj/metator-for-laravel
-php artisan metator:install
-```
-
-Review `deploy.php`, set the production hostname, repository, deploy user, and deploy path. Bootstrap the server using the generated `scripts/server-bootstrap.sh` before using GitHub Actions.
-
-The application must also have Laravel Pint, Rector, and Envy installed, with a `rector.php` configuration file:
-
-```bash
-composer require --dev laravel/pint rector/rector
-```
-
-### 2. Add the deployment key
-
-Create or use an SSH key whose public key is authorized for the production `deployer` user. Add the private key to the application repository as:
-
-`Settings -> Secrets and variables -> Actions -> New repository secret`
-
-Use the name `DEPLOY_SSH_PRIVATE_KEY`. Do not commit the private key.
-
-### 3. Add the scanning token
-
-Add a GitHub personal access token as the `PAT_TOKEN` repository secret. It is used by Gitleaks and TruffleHog to access repository history. Grant only the repository permissions required by the application.
-
-### 4. Add the production environment
-
-Create a `production` environment under `Settings -> Environments`. Add required reviewers if deployments need manual approval.
-
-### 5. Call the deploy workflow
-
-```yaml
-jobs:
-  tests:
-    uses: jcergolj/reusable-github-actions/.github/workflows/tests.yml@master
-
-  larastan:
-    uses: jcergolj/reusable-github-actions/.github/workflows/larastan.yml@master
-
-  pint:
-    uses: jcergolj/reusable-github-actions/.github/workflows/pint.yml@master
-
-  rector:
-    uses: jcergolj/reusable-github-actions/.github/workflows/rector.yml@master
-
-  envy:
-    uses: jcergolj/reusable-github-actions/.github/workflows/envy.yml@master
-
-  gitleaks:
-    uses: jcergolj/reusable-github-actions/.github/workflows/gitleaks.yml@master
-    secrets: inherit
-
-  trufflehog:
-    uses: jcergolj/reusable-github-actions/.github/workflows/trufflehog-scan.yml@master
-    secrets: inherit
-
-  deploy:
-    needs: [tests, larastan, pint, rector, envy, gitleaks, trufflehog]
-    if: github.ref == 'refs/heads/master'
-    uses: jcergolj/reusable-github-actions/.github/workflows/deploy-only.yml@master
-    secrets: inherit
-```
-
-Use `deploy.yml` instead when you want the repository to provide all checks and the deployment gate automatically. The application must contain a working `deploy.php` and the server must be able to clone the repository using its configured GitHub deploy key.
-
 ## Security notes
 
 - Pin workflow references to a release tag or commit SHA for production use instead of `@master`.
-- Store `PAT_TOKEN` and `DEPLOY_SSH_PRIVATE_KEY` as GitHub secrets.
-- Use a protected `production` environment for production deployments.
+- Store `PAT_TOKEN` as a GitHub secret.
